@@ -1,1 +1,2 @@
-# aviation-api-metar-js
+# aviation-api
+METAR decoder using aviationstack API
