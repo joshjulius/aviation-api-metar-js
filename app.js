@@ -9,7 +9,7 @@ const results = document.querySelector('#results');
 FORM VALIDATION
 ----------------- */
 
-input.addEventListener('input', () => {
+input.addEventListener('input', async () => {
     const query = input.value.toUpperCase();
     input.value = query;
     inputCheck.style.display = 'inline';
@@ -20,22 +20,34 @@ input.addEventListener('input', () => {
     } else if (!input.value.startsWith('K') && !input.value.startsWith('N') && !input.value.startsWith('P') && !input.value.startsWith('T')) {
         inputCheck.innerHTML = `<span class="form-invalid">❌ US ICAO airport codes begin with K, N, P, or T.</span>`;
     } else if (input.value.length === 4) {
-        fetch(`https://api.aviationapi.com/v1/airports?apt=${query}`)  
-            //SERVER ONLY RETURNS response: ok and status: 200
-            .then(res => res.json())
-            .then(checkStatusAirport)
-            .then(data => generateAirportName(data[query][0].facility_name, data[query][0].city))
-            .catch(err => generateErrorInput(err));
+        inputCheck.innerHTML = `<span class="form-typing">✏️ ${query} - Checking...</span>`;
+        try {
+            const airportName = await fetch(`https://cors.bridged.cc/https://api.aviationapi.com/v1/airports?apt=${query}`);
+            const airportNameJSON = await airportName.json();
+            generateAirportName(airportNameJSON[query][0].facility_name, airportNameJSON[query][0].city);
+        } catch (err) {
+            generateErrorInput(err);
+        }
     } else {
         inputCheck.innerHTML = `<span class="form-typing">✏️ ${query}</span>`;
     }
+});
 
-    function checkStatusAirport(response) {
-        if (response[query] === []) {
-            return Promise.reject(new Error())
-        } else {
-            return Promise.resolve(response);
-        }
+
+
+/*------------------
+DISPLAY AIRPORT NAME AND CITY
+------------------*/
+
+form.addEventListener('submit', async () => {
+    const query = input.value.toUpperCase();
+    airportName.innerHTML = '<p>Loading...</p>';
+    try {
+        const airportName = await fetch(`https://cors.bridged.cc/https://api.aviationapi.com/v1/airports?apt=${query}`);
+        const airportNameJSON = await airportName.json();
+        displayAirportName(airportNameJSON[query][0].facility_name, airportNameJSON[query][0].city);
+    } catch (err) {
+        hideAirportName(err);
     }
 });
 
@@ -45,37 +57,19 @@ input.addEventListener('input', () => {
 FETCH METAR
 ----------------- */
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
     const query = input.value.toUpperCase();
+    results.innerHTML = '<p>Loading...</p>';
     e.preventDefault();
-    fetch(`https://api.aviationapi.com/v1/weather/metar?apt=${query}`)
-        .then(checkStatus)
-        .then(res => res.json())
-        .then(data => generateHTML(data[query]))
-        .catch(err => generateErrorSubmit(err));
-});
-
-
-
-/*------------------
-DISPLAY AIRPORT NAME AND CITY
-------------------*/
-form.addEventListener('submit', () => {
-    const query = input.value.toUpperCase();
-    fetch(`https://api.aviationapi.com/v1/airports?apt=${query}`)  
-            //SERVER ONLY RETURNS response: ok and status: 200
-            .then(res => res.json())
-            .then(checkStatusAirport)
-            .then(data => displayAirportName(data[query][0].facility_name, data[query][0].city))
-            .catch(hideAirportName());
-
-    function checkStatusAirport(response) {
-        if (response[query] === []) {
-            return Promise.reject(new Error())
-        } else {
-            return Promise.resolve(response);
-        }
+    try {
+        const metar = await fetch(`https://cors.bridged.cc/https://api.aviationapi.com/v1/weather/metar?apt=${query}`);
+        const metarJSON = await metar.json();
+        generateHTML(metarJSON[query]);
+    } catch (err) {
+        console.log(err);
+        generateErrorSubmit(err);
     }
+        
 });
 
 
@@ -83,14 +77,6 @@ form.addEventListener('submit', () => {
 /* -----------------
 HELPER FUNCTIONS
 ----------------- */
-
-function checkStatus(response) {
-    if (response.ok) {
-        return Promise.resolve(response);
-    } else {
-        return Promise.reject(new Error(`${response.status} ${response.statusText}`))
-    }
-}
 
 function generateAirportName(airport, city) {
     inputCheck.innerHTML = `<span class="form-valid">✔️ ${airport}, ${city}</span>`;
@@ -136,7 +122,6 @@ function generateHTML(data) {
     
     input.value = '';
     inputCheck.style.display = 'none';
-    console.log(data);
 
     results.innerHTML = `
         <div id="raw-metar">
@@ -154,8 +139,8 @@ function generateHTML(data) {
     `;
 
     function addSpan() {
-        const windSpace = data.raw.match(/\d{5}G?\d?\d?KT(.?\d{3}V\d{3})?/g).join(' ');
-        const windNoSpace = data.raw.match(/\d{5}G?\d?\d?KT(.?\d{3}V\d{3})?/g).join().replace(' ', '-');
+        const windSpace = data.raw.match(/(\d{5}|VRB\d{2})G?\d?\d?KT(.?\d{3}V\d{3})?/g).join(' ');
+        const windNoSpace = data.raw.match(/(\d{5}|VRB\d{2})G?\d?\d?KT(.?\d{3}V\d{3})?/g).join().replace(' ', '-');
         const skyConditionSpace = data.raw.match(/(CLR|FEW|SCT|BKN|OVC)(\d?){3}/g).join(' ');
         const skyConditionNoSpace = data.raw.match(/(CLR|FEW|SCT|BKN|OVC)(\d?){3}/g).join('-').toString();
         let metarItems = data.raw.replace(windSpace, windNoSpace).replace(skyConditionSpace, skyConditionNoSpace).split(' ');
@@ -165,7 +150,7 @@ function generateHTML(data) {
                 metarItems[i] = `<span class="station-id">${metarItems[i]}</span>`;
             } else if (metarItems[i].match(/\d{6}Z/)) {
                 metarItems[i] = `<span class="time">${metarItems[i]}</span>`;
-            } else if (metarItems[i].match(/\d{5}G?\d?\d?KT(.?\d{3}V\d{3})?/g)) {
+            } else if (metarItems[i].match(/(\d{5}|VRB\d{2})G?\d?\d?KT(.?\d{3}V\d{3})?/g)) {
                 metarItems[i] = `<span class="wind">${metarItems[i].replace(/-/g, ' ')}</span>`;
             } else if (metarItems[i].match(/\d+SM/)) {
                 metarItems[i] = `<span class="visibility">${metarItems[i]}</span>`;
@@ -205,10 +190,10 @@ function generateErrorSubmit(err) {
         inputCheck.innerHTML = `<span class="form-invalid">☝️ Please enter an airport.</span>`;
     }
 
-    if (err.toString().includes(404)) {
-        results.innerHTML = `<p id="error-msg">⚠️ ${err} - No METAR found for ${input.value}.</p>`;
-    } else {
+    if (err.toString().includes('Failed to fetch')) {
         results.innerHTML = `<p id="error-msg">⚠️ ${err}</p>`;
+    } else {
+        results.innerHTML = `<p id="error-msg">⚠️ No METAR found for ${input.value}.</p>`;
     }
 }
 
