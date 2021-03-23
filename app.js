@@ -87,11 +87,11 @@ form.addEventListener('submit', async (e) => {
 /* -----------------
 HELPER FUNCTIONS
 ----------------- */
-function generateAirportName(airport, city) {
+const generateAirportName = (airport, city) => {
     inputCheck.innerHTML = `<span class="form-valid">✔️ ${airport}, ${city}</span>`;
 }
 
-function generateHTML(data) {
+const generateHTML = data => {
     const skyCondition = [];
     const time = data.time_of_obs.replace('T', ' at ').replace('Z', ' Zulu (UTC)');
     const gustExists = data.raw.match(gustFormat);
@@ -129,7 +129,7 @@ function generateHTML(data) {
         }
     }
 
-    function addSpan() {
+    const addSpan = () => {
         const windSpace = data.raw.match(windFormat).join(' ');
         const windNoSpace = data.raw.match(windFormat).join().replace(' ', '-');
         const skyConditionSpace = data.raw.match(skyConditionFormat).join(' ');
@@ -174,15 +174,15 @@ function generateHTML(data) {
 
 }
 
-function displayAirportName(airport, city) {
+const displayAirportName = (airport, city) => {
     airportName.innerHTML = `<p>${airport}, ${city}</p>`;
 }
 
-function hideAirportName() {
+const hideAirportName = () => {
     airportName.innerHTML = ``;
 }
 
-function generateErrorInput(err) {
+const generateErrorInput = err => {
     if (err.toString().includes('facility_name')) {
         inputCheck.innerHTML = `<span class="form-invalid">❌ ${input.value.toUpperCase()} does not match any US ICAO airport code.</span>`;
     } else {
@@ -190,7 +190,7 @@ function generateErrorInput(err) {
     }
 }
 
-function generateErrorSubmit(err) {
+const generateErrorSubmit = err => {
     if (input.value.length === 0) {
         inputCheck.style.display = 'inline';
         inputCheck.innerHTML = `<span class="form-invalid">☝️ Please enter an airport.</span>`;
@@ -212,14 +212,14 @@ results.addEventListener('mouseover', highlight);
 
 results.addEventListener('mouseout', removeHighlight);
 
-function highlight(e) {
+const highlight = e => {
     let hoverTarget = document.getElementsByClassName(e.target.className);
     for (let i = 0; i < hoverTarget.length; i++) {
         hoverTarget[i].classList.add('active');
     }
 }
 
-function removeHighlight() {
+const removeHighlight = () => {
         let hasActive = document.querySelectorAll('.active');
         for (let i = 0; i < hasActive.length; i++) {
             hasActive[i].classList.remove('active');
@@ -233,7 +233,7 @@ STICK LABEL
 -------------------*/
 results.addEventListener('click', addLabel);
 
-function addLabel(e) {
+const addLabel = e => {
     let labelTarget = document.getElementsByClassName(e.target.className.split(' ')[0]);
     labelTarget[0].classList.add('label-sticker');
     labelTarget[1].classList.add('label-bold');
