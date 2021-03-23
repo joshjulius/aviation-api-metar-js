@@ -55,7 +55,6 @@ form.addEventListener('submit', async () => {
     try {
         const airportName = await fetch(`https://cors.bridged.cc/https://api.aviationapi.com/v1/airports?apt=${query}`);
         const airportNameJSON = await airportName.json();
-        inputCheck.style.display = 'none';
         displayAirportName(airportNameJSON[query][0].facility_name, airportNameJSON[query][0].city);
     } catch (err) {
         hideAirportName(err);
@@ -72,6 +71,7 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
     results.innerHTML = '<p>Loading...</p>';
     input.value = '';
+    inputCheck.style.display = 'none';
     try {
         const metar = await fetch(`https://cors.bridged.cc/https://api.aviationapi.com/v1/weather/metar?apt=${query}`);
         const metarJSON = await metar.json();
@@ -208,10 +208,6 @@ const generateErrorSubmit = err => {
 /* -----------------
 HIGHLIGHT ON HOVER
 ----------------- */
-results.addEventListener('mouseover', highlight);
-
-results.addEventListener('mouseout', removeHighlight);
-
 const highlight = e => {
     let hoverTarget = document.getElementsByClassName(e.target.className);
     for (let i = 0; i < hoverTarget.length; i++) {
@@ -226,13 +222,15 @@ const removeHighlight = () => {
         }
 }
 
+results.addEventListener('mouseover', highlight);
+
+results.addEventListener('mouseout', removeHighlight);
+
 
 
 /*--------------------
 STICK LABEL
 -------------------*/
-results.addEventListener('click', addLabel);
-
 const addLabel = e => {
     let labelTarget = document.getElementsByClassName(e.target.className.split(' ')[0]);
     labelTarget[0].classList.add('label-sticker');
@@ -247,3 +245,5 @@ const addLabel = e => {
         removeLabelFromP[i].classList.remove('label-bold');
     }
 }
+
+results.addEventListener('click', addLabel);
